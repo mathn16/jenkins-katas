@@ -2,7 +2,7 @@ pipeline {
   agent any
     environment {
       docker_username='mathn16'
-    }
+     }
   stages {
     stage('Parallel execution') {
       parallel {
@@ -30,7 +30,10 @@ pipeline {
     }
     stage('docker push app'){
       when {
-        branch "master"
+        anyOf {
+          branch "master";
+          changeRequest()
+        }
       }
         environment {
           DOCKERCREDS = credentials('docker_login')
@@ -44,9 +47,13 @@ pipeline {
         }
     }
     stage('component test') {
-      when {branch "dev/*"}
+      when {
+        expression {
+          !env.BRANCH_NAME.contains("dev/")
+        }
+      }
       steps {
-        unstash 'binaries'
+        unstash 'code'
         sh 'ci/component-test.sh'
       }
     }
